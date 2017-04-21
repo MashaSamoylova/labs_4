@@ -39,7 +39,7 @@ void read_tree(struct node *tr, symbol_code table[], int i[], char *buffer) {
 	}	
 	
 	//нашли символ
-	if( (*tr).symbol != NULL ) {
+	if( -1 != (*tr).symbol ) {
 		table[*i].symbol = (*tr).symbol;
 		strcpy(table[*i].code, buffer);
 		*i = *i + 1;
@@ -69,8 +69,8 @@ void encode(symbol_code table[], int n, char* s, char* encoded_s) {
 }
 
 char* decode(struct node *tr, char* encoded_s, char* decoded_s) {
-
-	if( (*tr).symbol != NULL ) {
+	
+	if( -1 != (*tr).symbol  ) {
 		int len = strlen(decoded_s);
 		decoded_s[len] =  (*tr).symbol;
 		decoded_s[len+1] = 0;
@@ -135,7 +135,7 @@ void haffman(char* s) {
 		(*cup).frequency = (*queue[n-1]).frequency + (*queue[n-2]).frequency;
 		int cup_frequency = (*cup).frequency;
 
-		(*cup).symbol = NULL;
+		(*cup).symbol = -1;
 		(*cup).left = queue[n-2];
 		(*cup).right = queue[n-1];
 
