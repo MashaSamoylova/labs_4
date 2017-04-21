@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//#include "haffman.h"
 #include "my_library.h"
 
 void free_memory(struct node *fr) {
@@ -155,7 +154,6 @@ void haffman(char* s) {
 		
 		//сдвигаем хвост
 		for(i = n-3; k <= i; i--) {
-		//	printf("сдвигал\n");
 			queue[i+1] = queue[i];
 		}
 
