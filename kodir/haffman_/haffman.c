@@ -18,55 +18,76 @@ void free_memory(struct node *fr) {
 	}
 }
 
-void read_tree(struct node *tr, symbol_code table[], int i[], char *buffer) {
+//begining from i position
+int write_bytes(char* buffer, char* encoded_s, int i) {
+	int block = i / 8;
+	int k = 7 - i;
+	if (7 == k) {
+		encoded_s[block] = 0;
+	}
+	int index_s;
 
-	//типо налево пошли
-	if( (*tr).left != NULL ) {
-		
+	for(index_s = 0; buffer[index_s]; index_s++) {
+		if(-1 == k) {
+			block++;
+			encoded_s[block] = 0;
+			k = 0;
+		}
+		if('1' == buffer[index_s]) {
+			printf("lol 1\n");
+			encoded_s[block] = 1 << k;
+			k--;
+			i++;
+		}
+	}
+//	encoded_s[block+1] = '\0';
+	printf("s = %s\n", encoded_s);
+	return i;
+}
+
+int search(struct node *tr, char symbol, char* buffer, char* encoded_s, int encode_index) {
+
+	if ( (*tr).left != NULL ) {
 		int index = strlen(buffer);
 		buffer[index] = '0';
 		buffer[index + 1] = '\0';
-		read_tree( (*tr).left, table, i, buffer);
+		search((*tr).left, symbol, buffer, encoded_s, encode_index);
 	}
 
-	//типо направо пошли
-	if( (*tr).right != NULL ) {
-		
+	if ( (*tr).right != NULL ) {
 		int index = strlen(buffer);
 		buffer[index] = '1';
 		buffer[index + 1] = '\0';
-		read_tree( (*tr).right, table, i, buffer);		
-	}	
+		search((*tr).right, symbol, buffer, encoded_s, encode_index);
+	}
 	
-	//нашли символ
 	if( -1 != (*tr).symbol ) {
-		table[*i].symbol = (*tr).symbol;
-		strcpy(table[*i].code, buffer);
-		*i = *i + 1;
+		//found the symbol
+		if( (*tr).symbol == symbol) {
+			printf("%s\n", buffer);
+			//strncat(encoded_s, buffer, strlen(buffer));
+			encode_index = write_bytes(encoded_s, buffer, encode_index);
+			return encode_index;
+		}
 	}
 	
 	//like pop back
 	int len = strlen(buffer);
 	buffer[len - 1] = '\0';
-	
 }
 
-void encode(symbol_code table[], int n, char* s, char* encoded_s) {
-
-	int i, k;
-	int len_s = strlen(s);
-	
-	for(i = 0; i < len_s; i++) {
-		//looking for the needed symbol
-		for(k = 0; k < n; k++) {
-			if(s[i] == table[k].symbol) {
-				strncat(encoded_s, table[k].code, strlen(table[k].code));
-				break;
-			}
-		}
+void encode1(struct node *tr, char* s, int* encoded_s) {
+	int i = 0;
+	char* buffer;
+	buffer = malloc( sizeof(char)*8);
+	int encode_index = 0;
+	while(s[i]) {
+		encode_index = search(tr, s[i], buffer, encoded_s, encode_index);
+		i++;
 	}
-	
-}
+
+	free(buffer);
+}	
 
 char* decode(struct node *tr, char* encoded_s, char* decoded_s) {
 	
@@ -93,7 +114,6 @@ void haffman(char* s) {
 	int i;
 	int n = 0;
 	for(i = 0; s[i]; i++) {
-		printf("%d\n", s[i]);
 		int k;
 		for(k = 0; k < n; k++) {
 			if(s[i] == (*queue[k]).symbol) {
@@ -164,24 +184,20 @@ void haffman(char* s) {
 	}
 
 //дерево в нулевой ячейке
-//заполнение таблицы
-	symbol_code table[strlen(s)]; //таблица символов
 
 	char buffer[9];
 	buffer[0] = '\0';
 
-	int index[1];
-	index[0] = 0;
-
-	read_tree(queue[0], table, index,  buffer);
+//	read_tree(queue[0], table, index,  buffer);
 	
-	for(i = 0; i < stored_n; i++) {
+/*	for(i = 0; i < stored_n; i++) {
 		printf("s = %d code = %s\n", table[i].symbol, table[i].code);
 	}
-
-	char encoded_s[strlen(s)*8]; 
+*/
+	int encoded_s[strlen(s)]; 
 	encoded_s[0] = 0;
-	encode(table, stored_n, s, encoded_s);
+	//encode(table, stored_n, s, encoded_s);
+	encode1(queue[0], s, encoded_s);
 	printf("encoded: %s", encoded_s);
 	
 	char decoded_s[strlen(encoded_s)];
@@ -203,9 +219,37 @@ void haffman(char* s) {
 
 }
 
-int main() {
-	char s[1000];
-	printf("Please, input your string:\n");
-	scanf("%s", s);
+int main(int argc, char* argv[]) {
+	if(argc < 2) {
+		printf("please, use ./haffman <filename>\n");
+		return 0;
+	}
+
+	FILE *fd;
+	fd = fopen(argv[1], "r");
+	if(fd == NULL) {
+		printf("SOME ERROR:(\n");
+		return 0;
+	}
+
+	char* s = malloc( sizeof(char)*1000 );
+	
+	int i = 0;
+	do {
+		s[i] = fgetc(fd);
+		if(s[i] == EOF) {
+			if(feof(fd)) {
+				printf("Считывание завершено\n");
+				break;
+			}
+		}
+		i++;
+	} while(1);
+	s[i] = '\0';
+	
+	printf("считанное говно = %s\n", s);
 	haffman(s);
+	fclose(fd);
+	free(s);
+	return 0;
 }
