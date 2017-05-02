@@ -1,3 +1,5 @@
+#define CAPACITY 1024
+
 struct node{
 	char symbol;
 	int frequency;
@@ -10,6 +12,14 @@ typedef struct {
 	char code[9];
 } symbol_code;
 
+typedef struct {
+	unsigned mass[CAPACITY];
+	int length;
+} BoolVector;
+
 
 void QuickSort(struct node *q[], int begin, int end);
+int SetValue(BoolVector *v, int i, int value);
+int ConcatVector(BoolVector *v, char* b);
+void PrintBool(BoolVector *v);
 

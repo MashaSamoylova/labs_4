@@ -18,56 +18,29 @@ void free_memory(struct node *fr) {
 	}
 }
 
-//begining from i position
-int write_bytes(char* buffer, char* encoded_s, int i) {
-	int block = i / 8;
-	int k = 7 - i;
-	if (7 == k) {
-		encoded_s[block] = 0;
-	}
-	int index_s;
 
-	for(index_s = 0; buffer[index_s]; index_s++) {
-		if(-1 == k) {
-			block++;
-			encoded_s[block] = 0;
-			k = 0;
-		}
-		if('1' == buffer[index_s]) {
-			printf("lol 1\n");
-			encoded_s[block] = 1 << k;
-			k--;
-			i++;
-		}
-	}
-//	encoded_s[block+1] = '\0';
-	printf("s = %s\n", encoded_s);
-	return i;
-}
-
-int search(struct node *tr, char symbol, char* buffer, char* encoded_s, int encode_index) {
+void search(struct node *tr, char symbol, char* buffer, BoolVector *encoded_s) {
 
 	if ( (*tr).left != NULL ) {
 		int index = strlen(buffer);
 		buffer[index] = '0';
 		buffer[index + 1] = '\0';
-		search((*tr).left, symbol, buffer, encoded_s, encode_index);
+		search((*tr).left, symbol, buffer, encoded_s);
 	}
 
 	if ( (*tr).right != NULL ) {
 		int index = strlen(buffer);
 		buffer[index] = '1';
 		buffer[index + 1] = '\0';
-		search((*tr).right, symbol, buffer, encoded_s, encode_index);
+		search((*tr).right, symbol, buffer, encoded_s);
 	}
 	
 	if( -1 != (*tr).symbol ) {
 		//found the symbol
 		if( (*tr).symbol == symbol) {
 			printf("%s\n", buffer);
-			//strncat(encoded_s, buffer, strlen(buffer));
-			encode_index = write_bytes(encoded_s, buffer, encode_index);
-			return encode_index;
+			ConcatVector(encoded_s, buffer);
+			return;
 		}
 	}
 	
@@ -76,34 +49,37 @@ int search(struct node *tr, char symbol, char* buffer, char* encoded_s, int enco
 	buffer[len - 1] = '\0';
 }
 
-void encode1(struct node *tr, char* s, int* encoded_s) {
+void encode1(struct node *tr, char* s, BoolVector *encoded_s) {
 	int i = 0;
+	printf("pizda %d\n", encoded_s -> length);
+	encoded_s -> length = 0;
 	char* buffer;
 	buffer = malloc( sizeof(char)*8);
-	int encode_index = 0;
 	while(s[i]) {
-		encode_index = search(tr, s[i], buffer, encoded_s, encode_index);
+		search(tr, s[i], buffer, encoded_s);
 		i++;
 	}
+
+	printf("enc = %d\n", encoded_s->length);
 
 	free(buffer);
 }	
 
-char* decode(struct node *tr, char* encoded_s, char* decoded_s) {
+char* decode(struct node *tr, BoolVector *encoded_s, int i, char* decoded_s) {
 	
 	if( -1 != (*tr).symbol  ) {
 		int len = strlen(decoded_s);
 		decoded_s[len] =  (*tr).symbol;
 		decoded_s[len+1] = 0;
-		return encoded_s;
+		return i;
 	}
 
-	if('0' == *encoded_s) {
-		return decode((*tr).left, encoded_s + 1, decoded_s);
+	if(0 == GetValue(encoded_s, i)) {
+		return decode((*tr).left, encoded_s, i+1, decoded_s);
 	}
 	
-	if('1' == *encoded_s) {
-		return decode((*tr).right, encoded_s + 1, decoded_s);	
+	if(1 == GetValue(encoded_s,i)) { 
+		return decode((*tr).right, encoded_s, i+1, decoded_s);	
 	}
 }
 
@@ -188,29 +164,32 @@ void haffman(char* s) {
 	char buffer[9];
 	buffer[0] = '\0';
 
-//	read_tree(queue[0], table, index,  buffer);
+	BoolVector *encoded_s; 
+	encoded_s = malloc( sizeof(BoolVector) );
+	encoded_s -> length = 0;
+	printf("%d\n", encoded_s -> length);
 	
-/*	for(i = 0; i < stored_n; i++) {
-		printf("s = %d code = %s\n", table[i].symbol, table[i].code);
+	for(i = 0; i < CAPACITY; i++) {
+		encoded_s -> mass[i] = 0;
 	}
-*/
-	int encoded_s[strlen(s)]; 
-	encoded_s[0] = 0;
-	//encode(table, stored_n, s, encoded_s);
-	encode1(queue[0], s, encoded_s);
-	printf("encoded: %s", encoded_s);
 	
-	char decoded_s[strlen(encoded_s)];
+	printf("encode1 вызвался\n");
+	encode1(queue[0], s, encoded_s);
+	PrintBool(encoded_s);
+	
+	char decoded_s[encoded_s->length];
 	decoded_s[0] = 0;
-	char* pointer = encoded_s;
+	i = 0;
 
-	while(0 != *pointer){
-		pointer = decode(queue[0], pointer, decoded_s);
-		printf("%s\n", pointer);
+	while(i != encoded_s->length){
+		i = decode(queue[0], encoded_s, i, decoded_s);
+		printf("%d\n", i);
 	}
 
 	printf("decoded: %s\n", decoded_s);
 
+	
+	free(encoded_s);
 	for(i = 0; i < stored_n; i++) {
 		if(queue[i] != NULL) {
 			free_memory(queue[i]);
