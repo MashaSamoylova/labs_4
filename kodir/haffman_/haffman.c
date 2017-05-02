@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
 	} while(1);
 	s[i] = '\0';
 	
-	printf("считанное говно = %s\n", s);
+	printf("считанное = %s\n", s);
 	haffman(s);
 	fclose(fd);
 	free(s);
