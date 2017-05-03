@@ -20,6 +20,7 @@ typedef struct {
 
 void QuickSort(struct node *q[], int begin, int end);
 int SetValue(BoolVector *v, int i, int value);
+int GetValue(BoolVector *v, int position);
 int ConcatVector(BoolVector *v, char* b);
 void PrintBool(BoolVector *v);
 

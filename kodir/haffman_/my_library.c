@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include "my_library.h"
+#include "string.h"
 
 void QuickSort(struct node *q[], int begin, int end) {
 		int mediana = (*q[begin + (end-begin)/2]).frequency;
@@ -49,7 +51,6 @@ int SetValue(BoolVector *v, int position, int value) {
 	int i = position % 32;
 	if(value){
 		v->mass[block] = (v->mass[block] | (1 << i));
-		printf("vector = %1u block = %d\n", v->mass[block], block);
 	}
 	else{
 		v->mass[block] = (v->mass[block] & ~(1 << i));
@@ -71,7 +72,6 @@ int GetValue(BoolVector *v, int position) {
 }
 
 int ConcatVector(BoolVector *v, char* b) {
-	printf("length of encoded s = %d\n", v->length);
 	if( (v->length + strlen(b)) > CAPACITY ) {
 		printf("пфф..нет\n");
 		return -1;

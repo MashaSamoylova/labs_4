@@ -51,7 +51,6 @@ void search(struct node *tr, char symbol, char* buffer, BoolVector *encoded_s) {
 
 void encode1(struct node *tr, char* s, BoolVector *encoded_s) {
 	int i = 0;
-	printf("pizda %d\n", encoded_s -> length);
 	encoded_s -> length = 0;
 	char* buffer;
 	buffer = malloc( sizeof(char)*8);
@@ -60,12 +59,10 @@ void encode1(struct node *tr, char* s, BoolVector *encoded_s) {
 		i++;
 	}
 
-	printf("enc = %d\n", encoded_s->length);
-
 	free(buffer);
 }	
 
-char* decode(struct node *tr, BoolVector *encoded_s, int i, char* decoded_s) {
+int decode(struct node *tr, BoolVector *encoded_s, int i, char* decoded_s) {
 	
 	if( -1 != (*tr).symbol  ) {
 		int len = strlen(decoded_s);
@@ -84,7 +81,7 @@ char* decode(struct node *tr, BoolVector *encoded_s, int i, char* decoded_s) {
 }
 
 
-void haffman(char* s) {
+void haffman(char* s, char* filename) {
 	struct node *queue[strlen(s)];
 
 	int i;
@@ -167,26 +164,37 @@ void haffman(char* s) {
 	BoolVector *encoded_s; 
 	encoded_s = malloc( sizeof(BoolVector) );
 	encoded_s -> length = 0;
-	printf("%d\n", encoded_s -> length);
 	
 	for(i = 0; i < CAPACITY; i++) {
 		encoded_s -> mass[i] = 0;
 	}
-	
-	printf("encode1 вызвался\n");
+	//кодирование
 	encode1(queue[0], s, encoded_s);
 	PrintBool(encoded_s);
+
+	FILE *fd_encoded;
+	fd_encoded = fopen(filename, "wb");
+	if(NULL == fd_encoded) {
+		printf("не могу открыть файл\n");
+		return;
+	}
+	fwrite( encoded_s, 1, encoded_s->length/ 32 + !!(encoded_s->length % 32), fd_encoded);
+	fclose(fd_encoded);
 	
 	char decoded_s[encoded_s->length];
 	decoded_s[0] = 0;
 	i = 0;
-
+//декодирование
 	while(i != encoded_s->length){
 		i = decode(queue[0], encoded_s, i, decoded_s);
-		printf("%d\n", i);
 	}
 
 	printf("decoded: %s\n", decoded_s);
+
+	FILE *fd_decoded;
+	fd_decoded = fopen("decoded", "wb");
+	fwrite(decoded_s, 1, strlen(decoded_s), fd_decoded);
+	fclose(fd_decoded);
 
 	
 	free(encoded_s);
@@ -199,8 +207,8 @@ void haffman(char* s) {
 }
 
 int main(int argc, char* argv[]) {
-	if(argc < 2) {
-		printf("please, use ./haffman <filename>\n");
+	if(argc < 3) {
+		printf("please, use ./haffman <filename> <filename>\n");
 		return 0;
 	}
 
@@ -227,7 +235,7 @@ int main(int argc, char* argv[]) {
 	s[i] = '\0';
 	
 	printf("считанное = %s\n", s);
-	haffman(s);
+	haffman(s, argv[2]);
 	fclose(fd);
 	free(s);
 	return 0;
