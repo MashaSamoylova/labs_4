@@ -4,6 +4,7 @@
 #include "my_library.h"
 
 int DEL;
+int FLAG = 0;
 
 void printf_b(symbol_with_freq b[], int n) {
 	int i;
@@ -33,7 +34,7 @@ int count_frequency(char *s, symbol_with_freq b[]) {
 		}
 	}
 
-	QuickSort(b, 1, n-1);
+//	QuickSort(b, 1, n-1);
 	for(i = 1; i<n; i++) {
 		b[i].frequency += b[i-1].frequency;
 	}
@@ -65,8 +66,9 @@ int input_bit(char* s) {
 	if('0' == *s) {
 		return 0;
 	}
-	printf("end of the code\n");
-	exit(0);
+	if(FLAG) return 0;
+	FLAG = 1;
+	return 1;
 }
 
 void decode(char* code, symbol_with_freq b[]) {
@@ -83,27 +85,31 @@ void decode(char* code, symbol_with_freq b[]) {
 	int i = 1;
 	int cum = 0;
 	int c_index;
-	int counter = 17;
+	int counter = 25;
 	value = to_int(code+index);
 	index = 16;
+	int bit;
 
-	printf("\n\nDECODING:\n");
+	printf("\n\n-----------------------------DECODING:\n");
 	while(counter > 0) {
 		if(-1 == value) {
 			break;
 		}
-		printf("value = %d\n", value);
+//		printf("l[i-1];h[i-1]   [%d;%d]\n", l[i-1], h[i-1]);
 		range = (h[i-1] - l[i-1]) + 1;
+//		printf("range = %d\n", range);
 		cum = ((value - l[i-1] + 1) * DEL - 1) / range;
-		printf("cum = %d\n", cum);
-		printf("b[c_index].symbol: %c, frequency: %d\n", b[1].symbol, b[1].frequency);
-		for(c_index = 1; b[c_index].frequency < cum; c_index++){
-		}
-		printf("decode symbol: %c\n", b[c_index].symbol);
-		printf("[%d;%d]\n", l[i], h[i]);
-		l[i] = l[i-1] + (range*b[c_index-1].frequency)/DEL-1;
-		h[i] = l[i-1] + (range*b[c_index].frequency)/DEL;
-		printf("[%d;%d]\n", l[i], h[i]);
+//		printf("cum = %d\n", cum);
+//		printf("value = %d\n", value);
+		for(c_index = 1; b[c_index].frequency <= cum; c_index++);
+		printf("%c", b[c_index].symbol);
+		
+		
+		l[i] = l[i-1] + (range*b[c_index-1].frequency)/DEL;
+		h[i] = l[i-1] + (range*b[c_index].frequency)/DEL -1;
+//		printf("l[i]; h[i]    [%d;%d]\n", l[i], h[i]);
+		
+		
 		for(;;) {
 			if(h[i] >= half) {
 				if(l[i] >= half) {
@@ -120,11 +126,12 @@ void decode(char* code, symbol_with_freq b[]) {
 			}
 			l[i] = 2*l[i];
 			h[i] = 2*h[i] + 1;
+		//	printf("value=%d\n", value);
+		//	printf("l[i];h[i]  [%d;%d]\n", l[i], h[i]);
 			value = 2*value + input_bit(code+index);
 			index++;
 		}
-		printf("------------------\n");
-	printf("\n%d\n", index);
+	//	printf("------------------\n");
 	i++;
 	counter--;
 	}
@@ -181,16 +188,16 @@ int encode(char *s, symbol_with_freq b[]) {
 	printf("DEL = %d\n\n\n", DEL);
 	
 	while(s[i-1]) {
-		printf("symbol:%c\n", s[i-1]);
+	//	printf("symbol:%c\n", s[i-1]);
 		c_index = search(b, s[i-1]);
-		printf("friquency: %d\n", b[c_index].frequency);
+	//	printf("friquency: %d\n", b[c_index].frequency);
 
 
 		range = h[i-1] - l[i-1] + 1;
 
 		l[i] = l[i-1] + (range * b[c_index-1].frequency)/DEL;
 		h[i] = l[i-1] + (range * b[c_index].frequency)/DEL - 1;
-		printf("[%d;%d]\n", l[i], h[i]);	
+	//	printf("[%d;%d]\n", l[i], h[i]);	
 		for(;;) {
 			if(h[i] < half) {
 				write_bits(0, bits_to_foll, code);
@@ -211,10 +218,10 @@ int encode(char *s, symbol_with_freq b[]) {
 			l[i] = 2*l[i];
 			h[i] = 2*h[i] + 1;
 		}
-		printf("[%d;%d]\n", l[i], h[i]);	
+	//	printf("[%d;%d]\n", l[i], h[i]);	
 		i++;
-		printf("code = %s\n", code);
-		printf("-----------------\n");
+	//	printf("code = %s\n", code);
+	//	printf("-----------------\n");
 	}
 
 	printf("%s", code);
@@ -224,10 +231,10 @@ int encode(char *s, symbol_with_freq b[]) {
 
 int main(int argc, char* argv[]) { 
 
-	char s[50];
+	char s[100];
 	printf("input string: \n");	
 	scanf("%s", s);
-	printf("считанное = %s\n", s);
+	printf("%s\n", s);
 
 
 	symbol_with_freq b[strlen(s)];
