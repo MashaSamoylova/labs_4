@@ -15,9 +15,11 @@ void printf_b(symbol_with_freq b[], int n) {
 
 int count_frequency(char *s, symbol_with_freq b[]) {
 	int i;
-	int n = 1;
+	int n = 2;
 	b[0].symbol = '-';
 	b[0].frequency = 0;
+	b[1].symbol = '\0';
+	b[1].frequency = 1;
 	for(i = 0; s[i]; i++) {
 		int k;
 		for(k = 1; k < n; k++) {
@@ -34,7 +36,6 @@ int count_frequency(char *s, symbol_with_freq b[]) {
 		}
 	}
 
-//	QuickSort(b, 1, n-1);
 	for(i = 1; i<n; i++) {
 		b[i].frequency += b[i-1].frequency;
 	}
@@ -93,7 +94,8 @@ void decode(char* code, symbol_with_freq b[]) {
 	printf("\n\n-----------------------------DECODING:\n");
 	while(counter > 0) {
 		if(-1 == value) {
-			break;
+			printf("ERORR\n");
+			exit(0);
 		}
 //		printf("l[i-1];h[i-1]   [%d;%d]\n", l[i-1], h[i-1]);
 		range = (h[i-1] - l[i-1]) + 1;
@@ -132,8 +134,10 @@ void decode(char* code, symbol_with_freq b[]) {
 			index++;
 		}
 	//	printf("------------------\n");
-	i++;
-	counter--;
+		i++;
+		if( '\0 == b[c_index].symbol) {
+			break;
+		}
 	}
 }
 
@@ -187,7 +191,7 @@ int encode(char *s, symbol_with_freq b[]) {
 	int bits_to_foll = 0;
 	printf("DEL = %d\n\n\n", DEL);
 	
-	while(s[i-1]) {
+	while( (i-1) < (strlen(s)+1) ) {
 	//	printf("symbol:%c\n", s[i-1]);
 		c_index = search(b, s[i-1]);
 	//	printf("friquency: %d\n", b[c_index].frequency);
