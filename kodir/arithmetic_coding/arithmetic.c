@@ -135,7 +135,7 @@ void decode(char* code, symbol_with_freq b[]) {
 		}
 	//	printf("------------------\n");
 		i++;
-		if( '\0 == b[c_index].symbol) {
+		if( '\0' == b[c_index].symbol) {
 			break;
 		}
 	}
