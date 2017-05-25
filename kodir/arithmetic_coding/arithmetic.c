@@ -6,6 +6,7 @@
 
 int DEL;
 int FLAG = 0;
+int DEBUG_MODE = 0;
 
 void printf_b(symbol_with_freq b[], int n) {
 	int i;
@@ -18,7 +19,7 @@ int count_frequency(char *s, symbol_with_freq b[]) {
 	int i;
 	int n = 2;
 	b[0].symbol = '-';
-	b[0].frequency = 0;
+	b[0].frequency = 0; //symbol of end of file, encode with it
 	b[1].symbol = '\0';
 	b[1].frequency = 1;
 	for(i = 0; s[i]; i++) {
@@ -41,7 +42,7 @@ int count_frequency(char *s, symbol_with_freq b[]) {
 		b[i].frequency += b[i-1].frequency;
 	}
 	DEL = b[n-1].frequency;
-	//printf_b(b,n);
+	if(DEBUG_MODE) printf_b(b,n);
 	b[n].symbol = -1;
 	b[n].frequency = -1;
 	return 0;
@@ -75,8 +76,9 @@ int input_bit(char* s) {
 
 void decode(char* code, symbol_with_freq b[], char* decoded_s) {
 	int value;
-	int l[strlen(code)]; //исходный рабочий интервал
-	int h[strlen(code)];
+	int length_of_code = strlen(code);
+	int l[length_of_code]; //исходный рабочий интервал
+	int h[length_of_code];
 	h[0] = 65535;
 	l[0] = 0;
 	int first_qtr = h[0]/4+1;
@@ -87,7 +89,6 @@ void decode(char* code, symbol_with_freq b[], char* decoded_s) {
 	int i = 1;
 	int cum = 0;
 	int c_index;
-	int counter = 25;
 	value = to_int(code+index);
 	index = 16;
 	int bit;
@@ -95,22 +96,30 @@ void decode(char* code, symbol_with_freq b[], char* decoded_s) {
 	decoded_s[0] = '\0';
 	int k = 0;
 
-	while(counter > 0) {
+	while(1) {
+		if(DEBUG_MODE) printf("=================================\n");
 		if(-1 == value) {
 			printf("ERORR\n");
 			exit(0);
 		}
 		range = (h[i-1] - l[i-1]) + 1;
 		cum = ((value - l[i-1] + 1) * DEL - 1) / range;
+		
 		for(c_index = 1; b[c_index].frequency <= cum; c_index++);
-		//printf("%c", b[c_index].symbol);
+		if(DEBUG_MODE) printf("DECODE SYMBOL: %c\n", b[c_index].symbol);
+		
 		decoded_s[k] = b[c_index].symbol;
 		decoded_s[k+1] = '\0';
 		k++;
 		
 		l[i] = l[i-1] + (range*b[c_index-1].frequency)/DEL;
 		h[i] = l[i-1] + (range*b[c_index].frequency)/DEL -1;
-		
+
+		if(DEBUG_MODE) {
+			printf("value = %d\nrange = %d\n", value, range);
+			printf("[%d;%d]\n", l[i], h[i]);
+		}
+
 		for(;;) {
 			if(h[i] >= half) {
 				if(l[i] >= half) {
@@ -131,12 +140,14 @@ void decode(char* code, symbol_with_freq b[], char* decoded_s) {
 			index++;
 		}
 		i++;
-		if( '\0' == b[c_index].symbol) {
+		if(DEBUG_MODE) printf("--------------------------");
+		if( '\0' == b[c_index].symbol) { 
 			break;
 		}
 	}
 }
 
+//search sembol in table of frequency
 int search(symbol_with_freq b[], char c) {
 	int i = 0;
 	while(b[i].symbol != c) {
@@ -172,8 +183,9 @@ int write_bits(int bit, int bits_to_foll, char* code) {
 }
 
 int encode(char *s, symbol_with_freq b[], char* code) {
-	int l[strlen(s)]; //исходный рабочий интервал
-	int h[strlen(s)];
+	int length_of_string = strlen(s);
+	int l[length_of_string]; //исходный рабочий интервал
+	int h[length_of_string];
 	h[0] = 65535;
 	l[0] = 0;
 	int first_qtr = h[0]/4+1;
@@ -186,6 +198,7 @@ int encode(char *s, symbol_with_freq b[], char* code) {
 	int bits_to_foll = 0;
 	
 	while( (i-1) < (strlen(s)+1) ) {
+		if(DEBUG_MODE) printf("------------------------------\n");
 		c_index = search(b, s[i-1]);
 
 
@@ -193,7 +206,11 @@ int encode(char *s, symbol_with_freq b[], char* code) {
 
 		l[i] = l[i-1] + (range * b[c_index-1].frequency)/DEL;
 		h[i] = l[i-1] + (range * b[c_index].frequency)/DEL - 1;
-		
+		if(DEBUG_MODE) {
+			printf("range = %d\n", range);
+			printf("[l[i];h[i]] [%d;%d]\n", l[i], h[i]);
+			printf("[l[i-1];h[i-1]] [%d;%d]\n", l[i-1], h[i-1]);
+		}
 		for(;;) {
 			if(h[i] < half) {
 				write_bits(0, bits_to_foll, code);
@@ -202,22 +219,24 @@ int encode(char *s, symbol_with_freq b[], char* code) {
 			else if(l[i] >= half) {
 				write_bits(1, bits_to_foll, code);
 				bits_to_foll = 0;
+				//Нормализуем интервал, уменьшая значения границ, если они находятся во второй части рабочего интервала
 				l[i] -= half;
 				h[i] -= half;
 			}
+			// Если текущий интеpвал  содеpжит сеpедину исходного, то вывод еще одного обpатного бита позже, а сейчас убpать общую часть
 			else if(l[i] >= first_qtr && h[i] < third_qtr) {
 				bits_to_foll +=1;
 				l[i] -= first_qtr;
 				h[i] -= first_qtr;
 			}
 			else break;
+			//расширяем рабочий интервал
 			l[i] = 2*l[i];
 			h[i] = 2*h[i] + 1;
 		}
 		i++;
 	}
 
-//	decode(code, b);
 	return 0;
 }
 
@@ -236,9 +255,9 @@ int main(int argc, char* argv[]) {
 
 	count_frequency(s, b);
 	encode(s,b,code);
-//	printf("%s\n", code);
+	if(DEBUG_MODE) printf("%s\n", code);
 	decode(code, b, decoded_s);
-//	printf("%s\n", decoded_s);
+	if(DEBUG_MODE)printf("%s\n", decoded_s);
 	printf("%d\n", strcmp(s, decoded_s));
 
 	return 0;
